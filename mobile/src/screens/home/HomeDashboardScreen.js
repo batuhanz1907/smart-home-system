@@ -37,49 +37,61 @@ export default function HomeDashboardScreen({ navigation, route }) {
       id: 1,
       name: "Smart Lamp",
       room: "Living Room",
+      type: "lamp",
       image: require("../../../assets/images/Nlamp.png"),
       state: lampOn,
       toggle: () => setLampOn(!lampOn),
+      screen: null,
     },
     {
       id: 2,
       name: "Speaker",
       room: "Living Room",
+      type: "speaker",
       image: require("../../../assets/images/Nspeaker.png"),
       state: speakerOn,
       toggle: () => setSpeakerOn(!speakerOn),
+      screen: "DeviceDetail",
     },
     {
       id: 3,
       name: "Air Conditioner",
       room: "Living Room",
+      type: "air",
       image: require("../../../assets/images/Nair.png"),
       state: airOn,
       toggle: () => setAirOn(!airOn),
+      screen: "HumidifierDetail",
     },
     {
       id: 4,
       name: "Humidifier",
       room: "Living Room",
+      type: "humidifier",
       image: require("../../../assets/images/Nhumidifier.png"),
       state: humidifierOn,
       toggle: () => setHumidifierOn(!humidifierOn),
+      screen: null,
     },
     {
       id: 5,
       name: "Speaker",
       room: "Bedroom",
+      type: "speaker",
       image: require("../../../assets/images/Nspeaker.png"),
       state: bedroomSpeakerOn,
       toggle: () => setBedroomSpeakerOn(!bedroomSpeakerOn),
+      screen: "DeviceDetail",
     },
     {
       id: 6,
       name: "Aroma Diffuser",
       room: "Bedroom",
+      type: "aroma",
       image: require("../../../assets/images/Nhumidifier.png"),
       state: aromaOn,
       toggle: () => setAromaOn(!aromaOn),
+      screen: null,
     },
   ];
 
@@ -92,6 +104,18 @@ export default function HomeDashboardScreen({ navigation, route }) {
     }
 
     toggleFn();
+  };
+
+  const handleOpenDeviceDetail = (device) => {
+    if (!device.screen) return;
+
+    navigation.navigate(device.screen, {
+      deviceId: device.id,
+      deviceName: device.name,
+      roomName: device.room,
+      deviceType: device.type,
+      isActive: device.state,
+    });
   };
 
   const handleConfirmTurnOff = () => {
@@ -295,13 +319,12 @@ export default function HomeDashboardScreen({ navigation, route }) {
 
             <View style={styles.devicesGrid}>
               {devices.map((device) => (
-                <View key={device.id} style={styles.deviceCard}>
-                  <Image
-                    source={require("../../../assets/images/Gölge.png")}
-                    style={styles.deviceShadowImage}
-                    resizeMode="contain"
-                  />
-
+                <TouchableOpacity
+                  key={device.id}
+                  style={styles.deviceCard}
+                  activeOpacity={0.9}
+                  onPress={() => handleOpenDeviceDetail(device)}
+                >
                   <TouchableOpacity
                     style={[
                       styles.verticalSwitch,
@@ -311,7 +334,7 @@ export default function HomeDashboardScreen({ navigation, route }) {
                       handleDeviceToggle(
                         device.state,
                         device.toggle,
-                        device.image
+                        device.image,
                       )
                     }
                     activeOpacity={0.85}
@@ -326,15 +349,20 @@ export default function HomeDashboardScreen({ navigation, route }) {
                     />
                   </TouchableOpacity>
 
-                  <Image
-                    source={device.image}
-                    style={styles.deviceImage}
-                    resizeMode="contain"
-                  />
+                  <TouchableOpacity
+                    onPress={() => handleOpenDeviceDetail(device)}
+                    activeOpacity={device.screen ? 0.7 : 1}
+                  >
+                    <Image
+                      source={device.image}
+                      style={styles.deviceImage}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
 
                   <Text style={styles.deviceTitle}>{device.name}</Text>
                   <Text style={styles.deviceRoom}>{device.room}</Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
 
@@ -472,7 +500,10 @@ export default function HomeDashboardScreen({ navigation, route }) {
                     style={styles.memberAvatarOverlap}
                   />
 
-                  <TouchableOpacity style={styles.addMember} activeOpacity={0.8}>
+                  <TouchableOpacity
+                    style={styles.addMember}
+                    activeOpacity={0.8}
+                  >
                     <Feather name="plus" size={22} color="#2F80ED" />
                   </TouchableOpacity>
                 </View>
@@ -510,10 +541,7 @@ export default function HomeDashboardScreen({ navigation, route }) {
                 <Text style={styles.menuItemText}>Rooms</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={handleMenuDevices}
-              >
+              <TouchableOpacity activeOpacity={0.8} onPress={handleMenuDevices}>
                 <Text style={styles.menuItemText}>Devices</Text>
               </TouchableOpacity>
 
