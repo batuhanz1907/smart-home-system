@@ -46,58 +46,54 @@ export default function StatisticsScreen({ navigation }) {
         id: 1,
         name: "Living room",
         devices: 4,
-        usage: "20 kw",
+        usage: "20 kW",
         image: require("../../../assets/images/NNkoltuk.png"),
       },
       {
         id: 2,
         name: "Bedroom",
         devices: 3,
-        usage: "10 kw",
+        usage: "10 kW",
         image: require("../../../assets/images/NNyatak.png"),
       },
     ],
     []
   );
 
-  const buildSmoothPath = (points, w, h) => {
-    if (!points.length) return "";
-
-    const scaled = points.map((p) => ({
-      x: p.x * w,
-      y: p.y * h,
+  const scaledPoints = useMemo(() => {
+    return chartPoints.map((p) => ({
+      x: p.x * chartWidth,
+      y: p.y * chartHeight,
     }));
+  }, [chartPoints]);
 
-    let d = `M ${scaled[0].x} ${scaled[0].y}`;
+  const buildSmoothPath = (points) => {
+    if (!points.length) return "";
+    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
 
-    for (let i = 0; i < scaled.length - 1; i++) {
-      const current = scaled[i];
-      const next = scaled[i + 1];
+    let d = `M ${points[0].x} ${points[0].y}`;
 
-      const controlX1 = current.x + (next.x - current.x) / 2;
-      const controlY1 = current.y;
-      const controlX2 = current.x + (next.x - current.x) / 2;
-      const controlY2 = next.y;
+    for (let i = 0; i < points.length - 1; i++) {
+      const current = points[i];
+      const next = points[i + 1];
+      const midX = (current.x + next.x) / 2;
 
-      d += ` C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${next.x} ${next.y}`;
+      d += ` Q ${midX} ${current.y}, ${next.x} ${next.y}`;
     }
 
     return d;
   };
 
-  const pathData = useMemo(
-    () => buildSmoothPath(chartPoints, chartWidth, chartHeight),
-    [chartPoints]
-  );
+  const pathData = useMemo(() => buildSmoothPath(scaledPoints), [scaledPoints]);
 
-  const activePoint = useMemo(
-    () => ({
-      x: chartWidth * 0.53,
-      y: chartHeight * 0.16,
+  const activePoint = useMemo(() => {
+    const point = scaledPoints[6]; // 0.50, 0.16 olan nokta
+    return {
+      x: point.x,
+      y: point.y,
       label: "17 kW",
-    }),
-    []
-  );
+    };
+  }, [scaledPoints]);
 
   const handleGoBack = () => {
     if (navigation?.canGoBack()) {
@@ -138,6 +134,7 @@ export default function StatisticsScreen({ navigation }) {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tabsRow}
+            bounces={false}
           >
             {["Today", "Week", "Month", "Year", "Custom"].map((tab) => {
               const isActive = selectedTab === tab;
@@ -192,8 +189,10 @@ export default function StatisticsScreen({ navigation }) {
                   <Path
                     d={pathData}
                     stroke="#0D83FF"
-                    strokeWidth="2.2"
+                    strokeWidth="3"
                     fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
 
                   <Circle
@@ -217,8 +216,8 @@ export default function StatisticsScreen({ navigation }) {
                   style={[
                     styles.tooltipWrap,
                     {
-                      left: activePoint.x - 26,
-                      top: activePoint.y - 40,
+                      left: Math.max(0, activePoint.x - 26),
+                      top: Math.max(0, activePoint.y - 38),
                     },
                   ]}
                 >
@@ -248,7 +247,7 @@ export default function StatisticsScreen({ navigation }) {
 
             <View style={styles.statCardSmall}>
               <Text style={styles.statCardLabel}>Total Loss</Text>
-              <Text style={styles.statCardValue}>30.2 kw</Text>
+              <Text style={styles.statCardValue}>30.2 kW</Text>
             </View>
           </View>
         </View>
@@ -273,6 +272,7 @@ export default function StatisticsScreen({ navigation }) {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.sheetContent}
+            bounces={false}
           >
             {rooms.map((room) => (
               <View key={room.id} style={styles.roomCard}>
@@ -406,8 +406,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: chartHeight,
     justifyContent: "space-between",
-    paddingTop: 0,
-    paddingBottom: 0,
   },
 
   axisLabel: {
@@ -443,7 +441,7 @@ const styles = StyleSheet.create({
 
   daysRow: {
     marginLeft: 48,
-    marginTop: 2,
+    marginTop: 6,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 3,
@@ -462,9 +460,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 16,
-    paddingLeft: 10,
-    paddingRight: 15,
-    gap: 70,
+    paddingHorizontal: 14,
+    justifyContent: "space-between",
   },
 
   statCardLarge: {
@@ -475,10 +472,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     justifyContent: "center",
+    marginRight: 12,
   },
 
   statCardSmall: {
-    width: 92,
+    width: 110,
     height: 58,
     borderRadius: 14,
     backgroundColor: "#FFFFFF",
@@ -517,6 +515,7 @@ const styles = StyleSheet.create({
 
   bottomSheet: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: "#F7F8FA",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -562,6 +561,8 @@ const styles = StyleSheet.create({
   sheetContent: {
     paddingHorizontal: 16,
     paddingTop: 2,
+    paddingBottom: 16,
+    flexGrow: 1,
   },
 
   roomCard: {
@@ -570,7 +571,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     flexDirection: "row",
     alignItems: "center",
-    paddingLeft: 0,
     paddingRight: 18,
     marginBottom: 12,
     borderWidth: 1,
@@ -671,5 +671,15 @@ const styles = StyleSheet.create({
 
   bottomSpacer: {
     height: 24,
+  },
+
+  homeIndicator: {
+    alignSelf: "center",
+    width: 110,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "#0F1720",
+    opacity: 0.12,
+    marginBottom: 8,
   },
 });
