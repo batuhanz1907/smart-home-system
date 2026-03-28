@@ -27,14 +27,41 @@ export default function ProfileScreen({ navigation }) {
   const [phone, setPhone] = useState("30 901820");
   const [email, setEmail] = useState("kristin@gmail.com");
   const [countryModalVisible, setCountryModalVisible] = useState(false);
+  const [photoModalVisible, setPhotoModalVisible] = useState(false);
 
- const handleGoBack = () => {
-  if (navigation && navigation.canGoBack()) {
-    navigation.goBack();
-  } else {
-    navigation.navigate("HomeDashboard");
-  }
-};
+  const handleGoBack = () => {
+    try {
+      if (navigation?.canGoBack && navigation.canGoBack()) {
+        navigation.goBack();
+        return;
+      }
+    } catch (error) {
+      console.log("goBack error:", error);
+    }
+
+    if (navigation?.navigate) {
+      navigation.navigate("HomeDashboard");
+    }
+  };
+
+  const handleOpenPhotoOptions = () => {
+    setPhotoModalVisible(true);
+  };
+
+  const handleViewPhoto = () => {
+    setPhotoModalVisible(false);
+    console.log("View photo clicked");
+  };
+
+  const handleUploadPhoto = () => {
+    setPhotoModalVisible(false);
+    console.log("Upload photo clicked");
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoModalVisible(false);
+    console.log("Remove photo clicked");
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -43,12 +70,14 @@ export default function ProfileScreen({ navigation }) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        bounces={false}
       >
         <View style={styles.container}>
           <TouchableOpacity
             style={styles.backButton}
             activeOpacity={0.8}
             onPress={handleGoBack}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Feather name="arrow-left" size={22} color="#4B5563" />
           </TouchableOpacity>
@@ -62,15 +91,25 @@ export default function ProfileScreen({ navigation }) {
               resizeMode="contain"
             />
 
-            <View style={styles.avatarWrap}>
-              <Image
-                source={require("../../../assets/images/avatar.png")}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.avatarPressArea}
+              onPress={handleOpenPhotoOptions}
+            >
+              <View style={styles.avatarWrap}>
+                <Image
+                  source={require("../../../assets/images/avatar.png")}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+              </View>
+            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.uploadButton} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.uploadButton}
+              activeOpacity={0.8}
+              onPress={handleOpenPhotoOptions}
+            >
               <Feather name="image" size={20} color="#2F80ED" />
             </TouchableOpacity>
           </View>
@@ -156,6 +195,62 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={photoModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPhotoModalVisible(false)}
+      >
+        <View style={styles.photoModalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setPhotoModalVisible(false)}
+          />
+
+          <View style={styles.photoModalCard}>
+            <Text style={styles.photoModalTitle}>Profile Photo</Text>
+
+            <TouchableOpacity
+              style={styles.photoOption}
+              activeOpacity={0.8}
+              onPress={handleViewPhoto}
+            >
+              <Feather name="eye" size={18} color="#4B5563" />
+              <Text style={styles.photoOptionText}>View photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.photoOption}
+              activeOpacity={0.8}
+              onPress={handleUploadPhoto}
+            >
+              <Feather name="upload" size={18} color="#4B5563" />
+              <Text style={styles.photoOptionText}>Upload photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.photoOption}
+              activeOpacity={0.8}
+              onPress={handleRemovePhoto}
+            >
+              <Feather name="trash-2" size={18} color="#E25555" />
+              <Text style={[styles.photoOptionText, styles.removeText]}>
+                Remove photo
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              activeOpacity={0.8}
+              onPress={() => setPhotoModalVisible(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -177,16 +272,17 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    width: 36,
-    height: 36,
-    left: -10,
-    top: 35,
+    width: 40,
+    height: 40,
+    marginTop: 12,
+    marginLeft: -6,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 10,
   },
 
   headerTitle: {
-    marginTop: 6,
+    marginTop: 2,
     fontSize: 28,
     lineHeight: 34,
     color: "#4B5563",
@@ -209,13 +305,17 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
 
+  avatarPressArea: {
+    zIndex: 1,
+    borderRadius: 100,
+  },
+
   avatarWrap: {
     width: 168,
     height: 168,
     borderRadius: 84,
     overflow: "hidden",
     backgroundColor: "#FFFFFF",
-    zIndex: 1,
   },
 
   avatar: {
@@ -354,6 +454,68 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     color: "#7E8793",
+    fontFamily: "NotoSansMedium",
+  },
+
+  photoModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15, 23, 42, 0.18)",
+  },
+
+  photoModalCard: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 28,
+  },
+
+  photoModalTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    color: "#4B5563",
+    fontFamily: "NotoSansMedium",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+
+  photoOption: {
+    height: 54,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    backgroundColor: "#F8FAFC",
+    marginTop: 10,
+  },
+
+  photoOptionText: {
+    marginLeft: 12,
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#4B5563",
+    fontFamily: "NotoSansRegular",
+  },
+
+  removeText: {
+    color: "#E25555",
+  },
+
+  cancelButton: {
+    height: 54,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF3F8",
+    marginTop: 16,
+  },
+
+  cancelButtonText: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#4B5563",
     fontFamily: "NotoSansMedium",
   },
 });
