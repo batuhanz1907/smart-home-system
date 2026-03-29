@@ -61,7 +61,13 @@ export default function RoomDetailScreen({ navigation }) {
     closeTurnOffModal();
   };
 
-  const handleDeviceToggle = (deviceKey, isEnabled, setState, imageSource, title) => {
+  const handleDeviceToggle = (
+    deviceKey,
+    isEnabled,
+    setState,
+    imageSource,
+    title
+  ) => {
     if (isEnabled) {
       openTurnOffModal({
         key: deviceKey,
@@ -384,7 +390,9 @@ export default function RoomDetailScreen({ navigation }) {
               ) : null}
             </View>
 
-            <Text style={styles.modalTitle}>Manage your {selectedDevice?.title || "device"}</Text>
+            <Text style={styles.modalTitle}>
+              Manage your {selectedDevice?.title || "device"}
+            </Text>
 
             <Text style={styles.modalDescription}>
               This space is reserved for the relevant body type content text
@@ -421,7 +429,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F4F4F6",
-    paddingHorizontal: -14,
   },
 
   scrollContent: {
@@ -435,16 +442,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#24324A",
     overflow: "hidden",
     position: "relative",
-    marginHorizontal: -2,
+    marginHorizontal: 0,
   },
 
   backButton: {
     position: "absolute",
     left: 18,
-    top: 60,
+    top: 50,
     zIndex: 3,
-    width: 34,
-    height: 34,
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -452,30 +459,29 @@ const styles = StyleSheet.create({
   editButton: {
     position: "absolute",
     right: 18,
-    top: 60,
+    top: 50,
     zIndex: 3,
-    width: 34,
-    height: 34,
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
   },
 
   heroShadowImage: {
     position: "absolute",
-    right: -200,
-    left: 140,
-    top: 70,
-    width: 256,
-    height: 254,
+    right: -15,
+    top: 65,
+    width: 265,
+    height: 255,
     zIndex: 0,
   },
 
   heroImageWrap: {
     position: "absolute",
-    right: -5,
-    top: 105,
-    width: 250,
-    height: 200,
+    right: -15,
+    top: 100,
+    width: 248,
+    height: 196,
     borderTopLeftRadius: 168,
     borderTopRightRadius: 150,
     overflow: "hidden",
@@ -496,7 +502,7 @@ const styles = StyleSheet.create({
   },
 
   roomTitle: {
-    fontSize: 22,
+    fontSize: 18,
     lineHeight: 30,
     color: "#FFFFFF",
     fontFamily: "CatamaranBold",
@@ -504,7 +510,7 @@ const styles = StyleSheet.create({
 
   roomSubtitle: {
     marginTop: 4,
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 22,
     color: "#D7DFEA",
     fontFamily: "NotoSansRegular",
@@ -572,6 +578,7 @@ const styles = StyleSheet.create({
 
   devicesGrid: {
     marginTop: 18,
+    marginHorizontal: 20,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
@@ -663,7 +670,8 @@ const styles = StyleSheet.create({
   },
 
   playerCard: {
-    marginTop: -6,
+    marginTop: -10,
+    marginHorizontal: 20,
     borderRadius: 18,
     backgroundColor: "#2F80ED",
     paddingHorizontal: 14,
