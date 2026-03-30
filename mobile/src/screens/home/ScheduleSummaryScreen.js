@@ -190,7 +190,7 @@ export default function SpaceTypeScreen({ navigation }) {
 
             <View style={styles.stepWrapper}>
               <Text style={styles.stepLabel}>Step</Text>
-              <Text style={styles.stepValue}>3/7</Text>
+              <Text style={styles.stepValue}>2/7</Text>
             </View>
           </View>
         </View>
