@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   SafeAreaView,
   View,
@@ -12,6 +12,45 @@ import {
   Modal,
 } from "react-native";
 import { Feather, Entypo } from "@expo/vector-icons";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const API = "http://192.168.1.103:5000/api"; // güncel ip girildi test için
+
+const defaultScenes = [
+  {
+    id: "d1",
+    title: "Morning coffee",
+    subtitle: "Everyday | 08:15 AM - 09:00 AM",
+    room: "Living room",
+    enabled: false,
+    isDefault: true,
+  },
+  {
+    id: "d2",
+    title: "Movie Night",
+    subtitle: "Mon, Fri | 08:00 PM - 10:00 PM",
+    room: "Living room",
+    enabled: true,
+    isDefault: true,
+  },
+  {
+    id: "d3",
+    title: "Sleeping",
+    subtitle: "Everyday | 12:00 PM - 08:00 AM",
+    room: "Living room",
+    enabled: true,
+    isDefault: true,
+  },
+  {
+    id: "d4",
+    title: "32th Birthday Kristin",
+    subtitle: "July 30th | 07:00 PM - 10:00 PM",
+    room: "Living room",
+    enabled: false,
+    isDefault: true,
+  },
+];
 
 export default function ScenesScreen({ navigation }) {
   const [selectedFilter, setSelectedFilter] = useState("All scenes");
@@ -21,59 +60,96 @@ export default function ScenesScreen({ navigation }) {
   const [newSceneSubtitle, setNewSceneSubtitle] = useState("");
   const [newSceneRoom, setNewSceneRoom] = useState("Living room");
 
-  const [scenes, setScenes] = useState([
-    {
-      id: 1,
-      title: "Morning coffee",
-      subtitle: "Everyday | 08:15 AM - 09:00 AM",
-      room: "Living room",
-      enabled: false,
-    },
-    {
-      id: 2,
-      title: "Movie Night",
-      subtitle: "Mon, Fri | 08:00 PM - 10:00 PM",
-      room: "Living room",
-      enabled: true,
-    },
-    {
-      id: 3,
-      title: "Sleeping",
-      subtitle: "Everyday | 12:00 PM - 08:00 AM",
-      room: "Living room",
-      enabled: true,
-    },
-    {
-      id: 4,
-      title: "32th Birthday Kristin",
-      subtitle: "July 30th | 07:00 PM - 10:00 PM",
-      room: "Living room",
-      enabled: false,
-    },
-  ]);
+  const [savedScenes, setSavedScenes] = useState([]);
 
   const filters = useMemo(
     () => ["All scenes", "Living room", "Kitchen", "Bedroom"],
     []
   );
 
+  // ── Backend: veri çek ──────────────────────────────────────────────────────
+  const fetchSchedules = async () => {
+    try {
+      const token =
+        (await AsyncStorage.getItem("accessToken")) ||
+        (await AsyncStorage.getItem("token"));
+
+      if (!token) return;
+
+      const res = await axios.get(`${API}/schedules`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("FETCH DATA:", res.data);
+
+      const mapped = res.data.map((item) => ({
+        id: item._id,
+        title: item.title || "New scene",
+        subtitle:
+          item.subtitle ||
+          `${(item.selectedDays || []).join(", ")} | ${item.timeOn} ${item.periodOn} - ${item.timeOff} ${item.periodOff}`,
+        room: item.roomName || "Living room",
+        enabled: item.enabled ?? false,
+      }));
+
+      setSavedScenes(mapped);
+    } catch (err) {
+      console.log("FETCH ERROR:", err.response?.data || err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchSchedules();
+  }, []);
+
+  // ── Listeyi birleştir ──────────────────────────────────────────────────────
+  const allScenes = [...savedScenes, ...defaultScenes];
+
+  const filteredScenes =
+    selectedFilter === "All scenes"
+      ? allScenes
+      : allScenes.filter((scene) => scene.room === selectedFilter);
+
+  // ── Navigasyon ─────────────────────────────────────────────────────────────
   const handleGoBack = () => {
     navigation.goBack();
   };
 
-  const toggleScene = (id) => {
-    setScenes((prev) =>
-      prev.map((scene) =>
-        scene.id === id ? { ...scene, enabled: !scene.enabled } : scene
-      )
-    );
+  // ── Switch: aç/kapat → backend'e gönder ───────────────────────────────────
+  const toggleScene = async (id) => {
+    const updated = savedScenes.find((s) => s.id === id);
+    if (!updated) return; // default kayıtlara dokunma
+
+    try {
+      const token =
+        (await AsyncStorage.getItem("accessToken")) ||
+        (await AsyncStorage.getItem("token"));
+
+      if (!token) return;
+
+      const res = await axios.patch(
+        `${API}/schedules/${id}`,
+        { enabled: !updated.enabled },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setSavedScenes((prev) =>
+        prev.map((scene) =>
+          scene.id === id ? { ...scene, enabled: res.data.enabled } : scene
+        )
+      );
+    } catch (err) {
+      console.log("TOGGLE ERROR:", err.response?.data || err.message);
+    }
   };
 
-  const filteredScenes =
-    selectedFilter === "All scenes"
-      ? scenes
-      : scenes.filter((scene) => scene.room === selectedFilter);
-
+  // ── Modal ──────────────────────────────────────────────────────────────────
   const handleOpenAddModal = () => {
     setIsAddModalVisible(true);
   };
@@ -85,23 +161,45 @@ export default function ScenesScreen({ navigation }) {
     setNewSceneRoom("Living room");
   };
 
-  const handleAddScene = () => {
-    if (!newSceneTitle.trim() || !newSceneSubtitle.trim()) {
-      return;
+  // ── Yeni sahne ekle → backend'e gönder, sonra tekrar çek ──────────────────
+  const handleAddScene = async () => {
+    if (!newSceneTitle.trim() || !newSceneSubtitle.trim()) return;
+
+    try {
+      const token =
+        (await AsyncStorage.getItem("accessToken")) ||
+        (await AsyncStorage.getItem("token"));
+
+      console.log("SCENES TOKEN:", token);
+      if (!token) return;
+
+      const payload = {
+        title: newSceneTitle.trim(),
+        subtitle: newSceneSubtitle.trim(),
+        roomName: newSceneRoom,
+        enabled: false,
+        selectedDays: [1, 3, 5],
+        timeOn: "08:00",
+        timeOff: "10:00",
+        periodOn: "AM",
+        periodOff: "PM",
+      };
+
+      await axios.post(`${API}/schedules`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Local ekleme yerine backend'den taze veri çek
+      await fetchSchedules();
+      handleCloseAddModal();
+    } catch (err) {
+      console.log("ADD ERROR:", err.response?.data || err.message);
     }
-
-    const newScene = {
-      id: Date.now(),
-      title: newSceneTitle.trim(),
-      subtitle: newSceneSubtitle.trim(),
-      room: newSceneRoom,
-      enabled: false,
-    };
-
-    setScenes((prev) => [newScene, ...prev]);
-    handleCloseAddModal();
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#24324A" />
@@ -126,11 +224,7 @@ export default function ScenesScreen({ navigation }) {
             </View>
 
             <TouchableOpacity style={styles.iconButton} activeOpacity={0.75}>
-              <Entypo
-                name="dots-three-horizontal"
-                size={18}
-                color="#FFFFFF"
-              />
+              <Entypo name="dots-three-horizontal" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
