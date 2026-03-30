@@ -4,30 +4,68 @@ const scheduleSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    required: true,
   },
 
   home: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Home",
+    required: true,
   },
 
   room: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Room",
+    default: null,
   },
 
-  scene: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Scene",
+  title: {
+    type: String,
+    default: "",
+    trim: true,
   },
 
-  selectedDays: [Number],
+  subtitle: {
+    type: String,
+    default: "",
+    trim: true,
+  },
 
-  timeOn: String,
-  timeOff: String,
+  roomName: {
+    type: String,
+    default: "Living room",
+    trim: true,
+  },
 
-  periodOn: String,
-  periodOff: String,
+  enabled: {
+    type: Boolean,
+    default: false,
+  },
+
+  selectedDays: {
+    type: [Number],
+    default: [],
+  },
+
+  timeOn: {
+    type: String,
+    default: "",
+  },
+
+  timeOff: {
+    type: String,
+    default: "",
+  },
+
+  periodOn: {
+    type: String,
+    default: "",
+  },
+
+  periodOff: {
+    type: String,
+    default: "",
+  },
 
   createdAt: {
     type: Date,
